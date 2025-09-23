@@ -80,15 +80,24 @@ def processar(camadas, batch):
     
 def corrigir(camadas, erro):#y é a saida esperada, a real
     lr = 0.1 #learn rate
-    ultimoGradiente = []
+    
     
     for i, neuronio in enumerate(camadas[-1][0]):
+        ultimoGradiente = []
         gradiente = (erro)*neuronio.sigmoide*(1-neuronio.sigmoide)
         for j, peso in enumerate(neuronio.pesos):
            neuronio.pesos[j] -= lr*gradiente*camadas[-2][0][j].sigmoide
-           
+           ultimoGradiente.append(gradiente*neuronio.pesos[j])
+        
+        #todas as camadas entre a primeira e ultima
         for j in range(len(camadas)-2,0,-1):
-            print(j)
+            for k,neuronio2 in enumerate(camadas[j][0]):
+                derivada = neuronio2.sigmoide*(1-neuronio2.sigmoide)
+                for q, pesos in neuronio2.pesos:
+                    
+            
+        for j in camadas[0][0]:
+            
         
 def iniciar(epocas, folds):
     #quantidade neuronios, e quantidade de entrada do neuronio
