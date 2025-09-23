@@ -19,7 +19,6 @@ class Neuronio:
         for i,x in enumerate(xn):
             somatorio += x*self.pesos[i]
         
-        
         self.somatorio = somatorio
       
     def funcaoAtivacao(self, somatorio):
@@ -44,7 +43,6 @@ def criarCamada(quantNeuronio,quantEntrada):
     return camada
 
 def mostrarRede(camadas):
-    
     for i,camada in enumerate(camadas):
         print("camada ",i)
         for j,neuronio in enumerate(camada[0]):
@@ -68,36 +66,31 @@ def processar(camadas, batch):
                 neuronio.funcaoAtivacao(neuronio.somatorio)
                 aux.append(neuronio.sigmoide)
             ultimaSaida = aux
-    #print("saida ",ultimaSaida)
+    print("saida ",ultimaSaida)
     
     y = ultimaSaida[0]
     y2 = 1 if y>=0 else 0
     
-    print("valor Y / esperado = ", y2 ," / ", batch[2])
+    #print("valor Y / esperado = ", y2 ," / ", batch[2])
     #mostrarRede(camadas)
-    corrigir(camadas, batch[2]-y2)
+    corrigir(camadas, len(camadas)-1, batch[2])
     
     
-def corrigir(camadas, erro):#y é a saida esperada, a real
-    lr = 0.1 #learn rate
+def corrigir(camadas, quant, erro):#y é a saida esperada, a real
+    lr = 0.5 #learn rate
     
-    
-    for i, neuronio in enumerate(camadas[-1][0]):
-        ultimoGradiente = []
-        gradiente = (erro)*neuronio.sigmoide*(1-neuronio.sigmoide)
+    for i, neuronio in enumerate(camadas[quant][0]):
         for j, peso in enumerate(neuronio.pesos):
-           neuronio.pesos[j] -= lr*gradiente*camadas[-2][0][j].sigmoide
-           ultimoGradiente.append(gradiente*neuronio.pesos[j])
+            derivada = (erro)*neuronio.sigmoide*(1-neuronio.sigmoide)
+            if quant>0:
+                neuronio.pesos[j] -= lr * derivada*camadas[quant-1][0][j].sigmoide
+                camadas[quant][1] -= lr * derivada
+                
+                corrigir(camadas, quant-1, derivada*neuronio.pesos[j])
+            else:
+                neuronio.pesos[j] -= lr * derivada*neuronio.entradas[j]
+                camadas[quant][1] -= lr * derivada
         
-        #todas as camadas entre a primeira e ultima
-        for j in range(len(camadas)-2,0,-1):
-            for k,neuronio2 in enumerate(camadas[j][0]):
-                derivada = neuronio2.sigmoide*(1-neuronio2.sigmoide)
-                for q, pesos in neuronio2.pesos:
-                    
-            
-        for j in camadas[0][0]:
-            
         
 def iniciar(epocas, folds):
     #quantidade neuronios, e quantidade de entrada do neuronio
@@ -115,4 +108,4 @@ def iniciar(epocas, folds):
     print("tudo feito")    
     
 #epocas é o 1 parametro
-iniciar(10, dados)
+iniciar(100, dados)
