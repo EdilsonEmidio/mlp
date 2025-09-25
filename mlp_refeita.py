@@ -11,9 +11,10 @@ class Neuronio:
         self.somatorio = 0
         self.funcao = 0
         self.entradas = []
+        self.bies = random.uniform(0,1)
     
-    def somar(self, bies, xn):#xn é uma lista dos x, entradas
-        somatorio = bies
+    def somar(self, xn):#xn é uma lista dos x, entradas
+        somatorio = self.bies
         self.entradas = xn
         
         for i,x in enumerate(xn):
@@ -21,8 +22,8 @@ class Neuronio:
         
         self.somatorio = somatorio
       
-    def funcaoAtivacao(self, f , somatorio):
-        funcao = f(somatorio)
+    def funcaoAtivacao(self, somatorio):
+        funcao = 1/(1+ math.exp(-somatorio))
         self.funcao = funcao
         
 
@@ -35,11 +36,10 @@ def criarNeuronio(quantEntrada):
 
 def criarCamada(quantNeuronio,quantEntrada):
     
-    bies = random.uniform(0,1)
-    camada = [[],bies]#posicao 0 são os neuronios e a 1 é o bias
+    camada = []#posicao é so neuronio agora
 
     for n in range(quantNeuronio):
-        camada[0].append(criarNeuronio(quantEntrada))
+        camada.append(criarNeuronio(quantEntrada))
     
     return camada
 
@@ -50,16 +50,16 @@ def processar(camadas, batch):
     ultimaSaida = []
     for i, camada in enumerate(camadas):
         if i==0:#primeira camada
-            for neuronio in camada[0]:#camada[1] é o bies
-                neuronio.somar(camada[1],elementos)
-                neuronio.funcaoAtivacao(sigmoide, neuronio.somatorio)
+            for neuronio in camada:#camada[1] é o bies
+                neuronio.somar(elementos)
+                neuronio.funcaoAtivacao(neuronio.somatorio)
                 ultimaSaida.append(neuronio.funcao)
         
         else:#todas as outras camadas
             aux = [] #para repassar os ultimos funcaos feitos para a outra lista
-            for neuronio in camada[0]:
-                neuronio.somar(camada[1],ultimaSaida)
-                neuronio.funcaoAtivacao(sigmoide, neuronio.somatorio)
+            for neuronio in camada:
+                neuronio.somar(ultimaSaida)
+                neuronio.funcaoAtivacao(neuronio.somatorio)
                 aux.append(neuronio.funcao)
             ultimaSaida = aux
                 
@@ -70,34 +70,29 @@ def processar(camadas, batch):
     #print("predito ",y, " - real ",batch[2])
     print("valor Y / esperado = ", y2 ," / ", batch[2])
     
-    corrigir(camadas, len(camadas)-1, (batch[2]-y)*-1)
+    corrigir(camadas, len(camadas)-1, 0 ,(batch[2]-y)*-1)
     if y2 != batch[2]:
         erros = 1
     
     
-def corrigir(camadas, quant, erro):#y é a saida esperada, a real
-    lr = 0.05 #learn rate
-    print("erro ",erro)
-    for i, neuronio in enumerate(camadas[quant][0]):
-        if i>0 and quant != len(camadas)-1:
-            return 
-        derivada = (erro)*neuronio.funcao*(1-neuronio.funcao)
-        camadas[quant][1] -= lr * derivada
-        for j, peso in enumerate(neuronio.pesos):
-            if quant>0:
-                
-                print("derivada ",derivada*neuronio.pesos[j])
-                corrigir(camadas, quant-1, derivada*neuronio.pesos[j])
-                neuronio.pesos[j] -= lr * derivada*camadas[quant-1][0][j].funcao
-            else:
-                neuronio.pesos[j] -= lr * derivada*neuronio.entradas[j]
+def corrigir(camadas, quant, posicao, erro):#y é a saida esperada, a real
+    lr = 0.01 #learn rate
+    neuronio = camadas[quant][posicao]
+
+    derivada = (erro)*neuronio.funcao*(1-neuronio.funcao)
+    for j, peso in enumerate(neuronio.pesos):
+        if quant>0:
+            neuronio.pesos[j] -= lr * derivada*camadas[quant-1][j].funcao
+            neuronio.bies -= lr * derivada
+            corrigir(camadas, quant-1, j, derivada*peso) #j é o neuronio da outra camada
+            
+        else:
+            neuronio.pesos[j] -= lr * derivada*neuronio.entradas[j]
+            neuronio.bies -= lr * derivada
         
         
 def sigmoide(somatorio):
     return 1/(1+ math.exp(-somatorio))
-
-def derivadaSigmoide(sigmoide):
-    return sigmoide*(1- sigmoide)
 
 def mostrar(camadas):
     for camada in camadas:
@@ -113,16 +108,16 @@ def testar(camadas, batch):
     ultimaSaida = []
     for i, camada in enumerate(camadas):
         if i==0:#primeira camada
-            for neuronio in camada[0]:#camada[1] é o bies
-                neuronio.somar(camada[1],elementos)
-                neuronio.funcaoAtivacao(sigmoide, neuronio.somatorio)
+            for neuronio in camada:#camada[1] é o bies
+                neuronio.somar(elementos)
+                neuronio.funcaoAtivacao(neuronio.somatorio)
                 ultimaSaida.append(neuronio.funcao)
         
         else:#todas as outras camadas
             aux = [] #para repassar os ultimos funcaos feitos para a outra lista
-            for neuronio in camada[0]:
-                neuronio.somar(camada[1],ultimaSaida)
-                neuronio.funcaoAtivacao(sigmoide, neuronio.somatorio)
+            for neuronio in camada:
+                neuronio.somar(ultimaSaida)
+                neuronio.funcaoAtivacao(neuronio.somatorio)
                 aux.append(neuronio.funcao)
             ultimaSaida = aux
                 
@@ -158,5 +153,5 @@ def iniciar(epocas, folds):
     testar(camadas,[1,0])
     testar(camadas,[0,0])
 #epocas é o 1 parametro
-iniciar(1, dados)
+iniciar(10000, dados)
 
