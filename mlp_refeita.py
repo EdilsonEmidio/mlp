@@ -11,7 +11,7 @@ class Neuronio:
         self.somatorio = 0
         self.funcao = 0
         self.entradas = []
-        self.bies = random.uniform(0,1)
+        self.bies = random.uniform(-1,1)
     
     def somar(self, xn):#xn é uma lista dos x, entradas
         somatorio = self.bies
@@ -23,14 +23,15 @@ class Neuronio:
         self.somatorio = somatorio
       
     def funcaoAtivacao(self, somatorio):
-        funcao = 1/(1+ math.exp(-somatorio))
+        funcao = math.tanh(somatorio)
+        #(math.exp(somatorio) - math.exp(-somatorio))/(math.exp(somatorio) + math.exp(-somatorio))
         self.funcao = funcao
         
 
 def criarNeuronio(quantEntrada):
     lista = []
     for n in range(quantEntrada):
-        lista.append(random.uniform(0,1))
+        lista.append(random.uniform(-1,1))
     
     return Neuronio(lista)
 
@@ -76,10 +77,10 @@ def processar(camadas, batch):
     
     
 def corrigir(camadas, quant, posicao, erro):#y é a saida esperada, a real
-    lr = 0.01 #learn rate
+    lr = 0.05 #learn rate
     neuronio = camadas[quant][posicao]
-
-    derivada = (erro)*neuronio.funcao*(1-neuronio.funcao)
+    #4/ pow((math.exp(neuronio.funcao) +math.exp(-neuronio.funcao)),2)
+    derivada = (erro)* (1-neuronio.funcao**2)
     for j, peso in enumerate(neuronio.pesos):
         if quant>0:
             neuronio.pesos[j] -= lr * derivada*camadas[quant-1][j].funcao
