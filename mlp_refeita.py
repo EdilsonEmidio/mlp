@@ -62,67 +62,85 @@ def processar(camadas, batch):
                 neuronio.funcaoAtivacao(sigmoide, neuronio.somatorio)
                 aux.append(neuronio.funcao)
             ultimaSaida = aux
-    #print("saida ",ultimaSaida)
-    
+                
     y = ultimaSaida[0]
-    y2 = 1 if y>0.8 else 0
+    y2 = 1 if y>0.5 else 0
     
     global erros
+    #print("predito ",y, " - real ",batch[2])
+    print("valor Y / esperado = ", y2 ," / ", batch[2])
     
-    #print("valor Y / esperado = ", y2 ," / ", batch[2])
     corrigir(camadas, len(camadas)-1, (batch[2]-y)*-1)
     if y2 != batch[2]:
         erros = 1
-        
     
     
 def corrigir(camadas, quant, erro):#y é a saida esperada, a real
-    lr = 0.01 #learn rate
-    
+    lr = 0.05 #learn rate
+    print("erro ",erro)
     for i, neuronio in enumerate(camadas[quant][0]):
+        if i>0 and quant != len(camadas)-1:
+            return 
+        derivada = (erro)*neuronio.funcao*(1-neuronio.funcao)
+        camadas[quant][1] -= lr * derivada
         for j, peso in enumerate(neuronio.pesos):
-            derivada = (erro)*neuronio.funcao*(1-neuronio.funcao)
-            
             if quant>0:
-                neuronio.pesos[j] -= lr * derivada*camadas[quant-1][0][j].funcao                
-                camadas[quant][1] -= lr * derivada
                 
+                print("derivada ",derivada*neuronio.pesos[j])
                 corrigir(camadas, quant-1, derivada*neuronio.pesos[j])
+                neuronio.pesos[j] -= lr * derivada*camadas[quant-1][0][j].funcao
             else:
                 neuronio.pesos[j] -= lr * derivada*neuronio.entradas[j]
-                camadas[quant][1] -= lr * derivada
         
-    
-def hiperbolica(somatorio):
-    return (math.exp(somatorio) - math.exp(-somatorio)) / (math.exp(somatorio) + math.exp(-somatorio))
-
-def derivadaHiperbolica():
-    pass
-    
+        
 def sigmoide(somatorio):
     return 1/(1+ math.exp(-somatorio))
 
 def derivadaSigmoide(sigmoide):
     return sigmoide*(1- sigmoide)
 
-
 def mostrar(camadas):
     for camada in camadas:
         print("bies ",camada[1])
         for neuronio in camada[0]:
             for peso in neuronio.pesos:
-                print("pesos", peso)
+                print("pesos", peso)    
+
+
+def testar(camadas, batch):
+    elementos = [batch[0],batch[1]] #elementos tem 2 entradas x1,x2
+    
+    ultimaSaida = []
+    for i, camada in enumerate(camadas):
+        if i==0:#primeira camada
+            for neuronio in camada[0]:#camada[1] é o bies
+                neuronio.somar(camada[1],elementos)
+                neuronio.funcaoAtivacao(sigmoide, neuronio.somatorio)
+                ultimaSaida.append(neuronio.funcao)
         
+        else:#todas as outras camadas
+            aux = [] #para repassar os ultimos funcaos feitos para a outra lista
+            for neuronio in camada[0]:
+                neuronio.somar(camada[1],ultimaSaida)
+                neuronio.funcaoAtivacao(sigmoide, neuronio.somatorio)
+                aux.append(neuronio.funcao)
+            ultimaSaida = aux
+                
+    y = ultimaSaida[0]
+    y2 = 1 if y>0.5 else 0
+    print(ultimaSaida)
+    global erros
+    
+    print("(",batch[0] ,batch[1],") = ", y2)
+    
     
 def iniciar(epocas, folds):
     #quantidade neuronios, e quantidade de entrada do neuronio
     camada0 = criarCamada(2,2)
     camada1 = criarCamada(1,2)#tipo assim -> \
-
+   
     camadas = [camada0, camada1]
 
-    mostrar(camadas)
-    #print("acabado-------------")
     for i in range(epocas):
         global erros
         erros = 0
@@ -131,8 +149,14 @@ def iniciar(epocas, folds):
         if erros == 0:
             print("treinado com ",i," epocas!")
             break
-    #mostrar(camadas)
+        
+    
+    
     print("terminado")    
-
+    testar(camadas,[1,1])
+    testar(camadas,[0,1])
+    testar(camadas,[1,0])
+    testar(camadas,[0,0])
 #epocas é o 1 parametro
-iniciar(100, dados)
+iniciar(1, dados)
+
